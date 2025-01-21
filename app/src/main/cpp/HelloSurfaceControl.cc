@@ -151,10 +151,15 @@ bool HelloSurfaceControl::initOnRT(ANativeWindow *window) {
         return false;
     }
 
+    int x = 0;
+    int y = 0;
     for (int i = 0; i < kChildrenCount; i++) {
         mChildSurfaces.emplace_back(std::make_unique<ChildSurface>(mDevice, mQueue));
         mChildSurfaces.back()->init(mSurfaceControl, "HelloSurfaceControlChild");
         mChildSurfaces.back()->resize(800, 800);
+        mChildSurfaces.back()->setPosition(x, y);
+        x += 80;
+        y += 500;
     }
 
     return true;
@@ -176,10 +181,6 @@ void HelloSurfaceControl::updateOnRT(int format, int width, int height) {
 
     mWidth = width;
     mHeight = height;
-
-//    for (auto &childSurface: mChildSurfaces) {
-//        childSurface->resize(format, width, height / kChildrenCount);
-//    }
 
     mReadyToDraw = true;
 }
@@ -207,24 +208,11 @@ void HelloSurfaceControl::drawOnRT() {
         int32_t top = 0;
         int32_t left = 0;
         float alpha = 1.0f;
-        for (size_t i = 0; i < mChildSurfaces.size(); ++i) {
-            auto &childSurface = mChildSurfaces[i];
+        for (auto & childSurface : mChildSurfaces) {
             childSurface->draw();
+            childSurface->applyChanges(t);
             ASurfaceTransaction_setBuffer(t, childSurface->getSurfaceControl(),
                                           childSurface->getCurrentBuffer(), -1);
-            ASurfaceTransaction_setBufferTransform(t, childSurface->getSurfaceControl(),
-                                                   kTransforms[i % std::size(kTransforms)]);
-            ASurfaceTransaction_setBufferAlpha(t, childSurface->getSurfaceControl(), alpha);
-            ASurfaceTransaction_setVisibility(t, childSurface->getSurfaceControl(),
-                                              ASURFACE_TRANSACTION_VISIBILITY_SHOW);
-            ASurfaceTransaction_setPosition(t, childSurface->getSurfaceControl(), left, top);
-            ASurfaceTransaction_setScale(t, childSurface->getSurfaceControl(), 1.0f, 1.0f);
-            ASurfaceTransaction_setCrop(t, childSurface->getSurfaceControl(),
-                                        {0, 0, childSurface->getWidth() * 2 / 3,
-                                         childSurface->getHeight() * 2 / 3});
-            left += 100;
-            top += mHeight / kChildrenCount;
-            alpha *= 0.8f;
         }
         glFinish();
         ASurfaceTransaction_apply(t);

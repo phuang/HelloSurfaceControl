@@ -33,7 +33,7 @@ bool ChildSurface::init(ASurfaceControl *parent, const char *debugName) {
     createProgram();
     setupBuffers();
 
-    return mSurfaceControl != nullptr;
+    return true;
 }
 
 void ChildSurface::resize(int width, int height) {
@@ -204,4 +204,24 @@ void ChildSurface::drawGL() {
     glDeleteTextures(1, &texture);
 
     mBufferQueue.enqueueProducedImage();
+}
+
+void ChildSurface::applyChanges(ASurfaceTransaction* transaction) {
+    if (mChangedFlags[CROP_CHANGED]) {
+        ASurfaceTransaction_setCrop(transaction, mSurfaceControl, mCrop);
+    }
+    if (mChangedFlags[POSITION_CHANGED]) {
+        ASurfaceTransaction_setPosition(transaction, mSurfaceControl, mLeft, mTop);
+    }
+    if (mChangedFlags[TRANSFORM_CHANGED]) {
+        ASurfaceTransaction_setBufferTransform(transaction, mSurfaceControl, mTransform);
+    }
+    if (mChangedFlags[SCALE_CHANGED]) {
+        ASurfaceTransaction_setScale(transaction, mSurfaceControl, mXScale, mYScale);
+    }
+    if (mChangedFlags[ALPHA_CHANGED]) {
+        ASurfaceTransaction_setBufferAlpha(transaction, mSurfaceControl, mAlpha);
+    }
+
+    mChangedFlags.reset();
 }

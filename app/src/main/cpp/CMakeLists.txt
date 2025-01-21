@@ -38,6 +38,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
         -DVK_USE_PLATFORM_ANDROID_KHR=1
         -DGL_GLEXT_PROTOTYPES=1
+        -DEGL_EGLEXT_PROTOTYPES=1
     )
 
 # Specifies libraries CMake should link to your target library. You
