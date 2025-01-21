@@ -154,18 +154,15 @@ bool HelloSurfaceControl::initOnRT(ANativeWindow *window) {
 
     int x = 0;
     int y = 0;
-    float alpha = 1.0f;
     float delta = 1.0f;
     for (int i = 0; i < kChildrenCount; i++) {
         mChildSurfaces.emplace_back(std::make_shared<ChildSurface>(mDevice, mQueue));
         mChildSurfaces.back()->init(mSurfaceControl, "HelloSurfaceControlChild");
         mChildSurfaces.back()->resize(kChildSize, kChildSize);
         mChildSurfaces.back()->setPosition(x, y);
-        mChildSurfaces.back()->setAlpha(alpha);
         mChildSurfaces.back()->setAnimationDelta(delta);
         x += 80;
         y += 500;
-        alpha -= 0.2f;
         delta *= 1.5f;
     }
 
@@ -218,8 +215,8 @@ void HelloSurfaceControl::drawOnRT() {
         mChildSurfaces[2]->setAlpha(scale);
     }
     {
-        int x = 300 * factor + 200;
-        int y = 300 * factor + 1400;
+        int x = 600 * factor + 200;
+        int y = 600 * factor + 1100;
         mChildSurfaces[3]->setPosition(x, y);
     }
 
