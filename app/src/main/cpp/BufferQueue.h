@@ -24,26 +24,16 @@ public:
     void createBuffers();
     void releaseBuffers();
 
-    void produceImage();
-    void enqueueProducedImage();
-
     struct Image {
         AHardwareBuffer* buffer = nullptr;
         EGLImage eglImage = EGL_NO_IMAGE;
     };
 
+    Image produceImage();
+    void enqueueProducedImage();
+
     Image presentImage();
-    void releasePresentImage();
-
-    [[nodiscard]] const Image& getCurrentProduceImage() const {
-        return mCurrentProduceImage;
-    }
-
-    AHardwareBuffer* getCurrentBuffer() {
-        return mProducedImages.front().buffer;
-    }
-
-
+    void releasePresentImage(int fenceFd);
 
 private:
     VkDevice mDevice = VK_NULL_HANDLE;

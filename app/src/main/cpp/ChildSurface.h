@@ -13,7 +13,7 @@
 
 #include "BufferQueue.h"
 
-class ChildSurface {
+class ChildSurface : public std::enable_shared_from_this<ChildSurface> {
 public:
     ChildSurface(VkDevice device, VkQueue queue);
     ~ChildSurface();
@@ -32,10 +32,6 @@ public:
 
     ASurfaceControl *getSurfaceControl() {
         return mSurfaceControl;
-    }
-
-    AHardwareBuffer* getCurrentBuffer() {
-        return mBufferQueue.getCurrentBuffer();
     }
 
     void setCrop(const ARect& crop) {
@@ -79,6 +75,7 @@ public:
         if (mXScale == xScale && mYScale == yScale) {
             return;
         }
+        mChangedFlags[SCALE_CHANGED] = true;
         mXScale = xScale;
         mYScale = yScale;
     }
@@ -100,12 +97,39 @@ public:
         return mAlpha;
     }
 
+    void setColor(float r, float g, float b, float a) {
+        if (mColor[0] == r && mColor[1] == g && mColor[2] == b && mColor[3] == a) {
+            return;
+        }
+        mColor[0] = r;
+        mColor[1] = g;
+        mColor[2] = b;
+        mColor[3] = a;
+        mChangedFlags[COLOR_CHANGED] = true;
+    }
+
+    void setTransparent(bool transparent) {
+        if (mTransparent == transparent) {
+            return;
+        }
+        mTransparent = transparent;
+        mChangedFlags[TRANSPARENT_CHANGED] = true;
+    }
+
+    void setAnimationDelta(float delta) {
+        mDelta = delta;
+    }
+
     void applyChanges(ASurfaceTransaction* transaction);
 
 private:
     void drawGL();
     void createProgram();
     void setupBuffers();
+    void setupFramebuffer();
+
+    static void bufferReleasedCallback(void* context, int fenceFd);
+    void bufferReleased(int fenceFd);
 
     VkDevice mDevice = VK_NULL_HANDLE;
     VkQueue mQueue = VK_NULL_HANDLE;
@@ -119,6 +143,9 @@ private:
     GLuint mVbo = 0;
     GLuint mEbo = 0;
 
+    GLuint mFbo = 0;
+    GLuint mRbo = 0;
+
     enum : int {
         BUFFER_CHANGED = 0,
         CROP_CHANGED,
@@ -126,7 +153,9 @@ private:
         TRANSFORM_CHANGED,
         SCALE_CHANGED,
         ALPHA_CHANGED,
-        MAX_CHANGED_FLAGS = 5
+        COLOR_CHANGED,
+        TRANSPARENT_CHANGED,
+        MAX_CHANGED_FLAGS,
     };
 
     std::bitset<MAX_CHANGED_FLAGS> mChangedFlags;
@@ -140,6 +169,10 @@ private:
 
     int mTransform = 0;
     float mAlpha = 1.0f;
+    float mColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    bool mTransparent = false;
+
+    float mDelta = 1.0f;
 };
 
 

@@ -54,10 +54,11 @@ private:
     int mHeight = 0;
 
     std::vector<ASurfaceControl*> mChildren;
-    std::vector<std::unique_ptr<ChildSurface>> mChildSurfaces;
+    std::vector<std::shared_ptr<ChildSurface>> mChildSurfaces;
 
     bool mBeingDestroyed = false;
     bool mReadyToDraw = false;
+    uint32_t mFrameCount = 0;
 
     std::deque<std::function<void()>> mTasks;
     std::optional<std::thread> mThread;

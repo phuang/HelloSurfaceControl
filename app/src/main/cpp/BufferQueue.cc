@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <EGL/eglext.h>
+#include <unistd.h>
 
 #include "Log.h"
 
@@ -31,13 +32,15 @@ void BufferQueue::createBuffers() {
         desc.height = mHeight;
         desc.layers = 1;
         desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
-        desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
+        desc.usage =
+                AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
         AHardwareBuffer_allocate(&desc, &buffer);
         mBuffers.push_back(buffer);
 
         // Import the AHardwareBuffer to the EGLImage
         EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(buffer);
-        EGLImage eglImage = eglCreateImageKHR(eglGetCurrentDisplay(), EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID,
+        EGLImage eglImage = eglCreateImageKHR(eglGetCurrentDisplay(), EGL_NO_CONTEXT,
+                                              EGL_NATIVE_BUFFER_ANDROID,
                                               clientBuffer, nullptr);
         if (eglImage == EGL_NO_IMAGE_KHR) {
             LOGE("Failed to create EGL image");
@@ -143,11 +146,14 @@ void BufferQueue::resize(int width, int height) {
     createBuffers();
 }
 
-void BufferQueue::produceImage() {
-    assert(!mAvailableImages.empty());
+BufferQueue::Image BufferQueue::produceImage() {
     assert(mCurrentProduceImage.buffer == nullptr);
+    if (mAvailableImages.empty()) {
+        return {};
+    }
     mCurrentProduceImage = mAvailableImages.front();
     mAvailableImages.pop_front();
+    return mCurrentProduceImage;
 }
 
 void BufferQueue::enqueueProducedImage() {
@@ -157,15 +163,22 @@ void BufferQueue::enqueueProducedImage() {
 }
 
 BufferQueue::Image BufferQueue::presentImage() {
-    assert(!mProducedImages.empty());
+    if (mProducedImages.empty()) {
+        return {};
+    }
     auto image = mProducedImages.front();
     mInPresentImages.push_back(image);
     return image;
 }
 
-void BufferQueue::releasePresentImage() {
+void BufferQueue::releasePresentImage(int fenceFd) {
     assert(!mInPresentImages.empty());
     auto image = mInPresentImages.front();
     mInPresentImages.pop_front();
     mAvailableImages.push_back(image);
+
+    // TODO: Wait for the fence to signal
+    if (fenceFd >= 0) {
+        close(fenceFd);
+    }
 }

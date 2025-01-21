@@ -32,7 +32,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ChildSurface.cc
         ChildSurface.h
         BufferQueue.cc
-        BufferQueue.h)
+        BufferQueue.h
+        Matrix.h)
 
 # Specifies defines for the compiler
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

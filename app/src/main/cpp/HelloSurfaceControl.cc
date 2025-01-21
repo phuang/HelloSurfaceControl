@@ -10,6 +10,7 @@
 #define LOG_TAG "SurfaceControlApp"
 
 constexpr int kChildrenCount = 4;
+constexpr int kChildSize = 800;
 
 HelloSurfaceControl::HelloSurfaceControl() {
     mThread.emplace([this] { runOnRT(); });
@@ -153,13 +154,19 @@ bool HelloSurfaceControl::initOnRT(ANativeWindow *window) {
 
     int x = 0;
     int y = 0;
+    float alpha = 1.0f;
+    float delta = 1.0f;
     for (int i = 0; i < kChildrenCount; i++) {
-        mChildSurfaces.emplace_back(std::make_unique<ChildSurface>(mDevice, mQueue));
+        mChildSurfaces.emplace_back(std::make_shared<ChildSurface>(mDevice, mQueue));
         mChildSurfaces.back()->init(mSurfaceControl, "HelloSurfaceControlChild");
-        mChildSurfaces.back()->resize(800, 800);
+        mChildSurfaces.back()->resize(kChildSize, kChildSize);
         mChildSurfaces.back()->setPosition(x, y);
+        mChildSurfaces.back()->setAlpha(alpha);
+        mChildSurfaces.back()->setAnimationDelta(delta);
         x += 80;
         y += 500;
+        alpha -= 0.2f;
+        delta *= 1.5f;
     }
 
     return true;
@@ -192,33 +199,39 @@ void HelloSurfaceControl::update(int format, int width, int height) {
 }
 
 void HelloSurfaceControl::drawOnRT() {
-    static bool sFirstFrame = true;
-    if (sFirstFrame) {
-        LOGD("HelloSurfaceControl::drawOnRT()");
-        ASurfaceTransaction *t = ASurfaceTransaction_create();
-//        ASurfaceTransaction_setVisibility(t, mSurfaceControl, ASURFACE_TRANSACTION_VISIBILITY_SHOW);
-//        ARect rect = {0, 0, mWidth, mHeight};
-//        ASurfaceTransaction_setGeometry(t, mSurfaceControl, rect, rect, 0);
-        static int kTransforms[] = {
-                ANATIVEWINDOW_TRANSFORM_IDENTITY,
-                ANATIVEWINDOW_TRANSFORM_ROTATE_90,
-                ANATIVEWINDOW_TRANSFORM_ROTATE_180,
-                ANATIVEWINDOW_TRANSFORM_ROTATE_270
-        };
-        int32_t top = 0;
-        int32_t left = 0;
-        float alpha = 1.0f;
-        for (auto & childSurface : mChildSurfaces) {
-            childSurface->draw();
-            childSurface->applyChanges(t);
-            ASurfaceTransaction_setBuffer(t, childSurface->getSurfaceControl(),
-                                          childSurface->getCurrentBuffer(), -1);
-        }
-        glFinish();
-        ASurfaceTransaction_apply(t);
-        ASurfaceTransaction_delete(t);
-        sFirstFrame = false;
+    LOGD("HelloSurfaceControl::drawOnRT()");
+    ASurfaceTransaction *t = ASurfaceTransaction_create();
+
+    const float kAnimationPeriod = 200.0f;
+    float factor = std::abs(
+            .5f - (mFrameCount % static_cast<uint32_t>(kAnimationPeriod)) / kAnimationPeriod);
+    {
+        float scale = factor + 0.5f;
+        mChildSurfaces[0]->setScale(scale, scale);
     }
+    {
+        int crop = 200.0f * factor;
+        mChildSurfaces[1]->setCrop({crop, crop, kChildSize - crop * 2, kChildSize - crop * 2});
+    }
+    {
+        float scale = factor * 2;
+        mChildSurfaces[2]->setAlpha(scale);
+    }
+    {
+        int x = 300 * factor + 200;
+        int y = 300 * factor + 1400;
+        mChildSurfaces[3]->setPosition(x, y);
+    }
+
+    for (auto &childSurface: mChildSurfaces) {
+        childSurface->draw();
+        childSurface->applyChanges(t);
+    }
+
+    glFinish();
+    ASurfaceTransaction_apply(t);
+    ASurfaceTransaction_delete(t);
+    mFrameCount++;
 }
 
 void HelloSurfaceControl::releaseOnRT() {
