@@ -237,9 +237,11 @@ void HelloSurfaceControl::releaseOnRT() {
 
     if (mSurfaceControl) {
         ASurfaceControl_release(mSurfaceControl);
+        mSurfaceControl = nullptr;
     }
     if (mWindow) {
         ANativeWindow_release(mWindow);
+        mWindow = nullptr;
     }
 }
 
