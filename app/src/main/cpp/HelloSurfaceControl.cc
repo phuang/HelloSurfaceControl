@@ -161,6 +161,7 @@ bool HelloSurfaceControl::initOnRT(ANativeWindow *window) {
         mChildSurfaces.back()->resize(kChildSize, kChildSize);
         mChildSurfaces.back()->setPosition(x, y);
         mChildSurfaces.back()->setAnimationDelta(delta);
+
         x += 80;
         y += 500;
         delta *= 1.5f;

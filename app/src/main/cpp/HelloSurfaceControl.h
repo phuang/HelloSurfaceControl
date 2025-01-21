@@ -53,7 +53,6 @@ private:
     int mWidth = 0;
     int mHeight = 0;
 
-    std::vector<ASurfaceControl*> mChildren;
     std::vector<std::shared_ptr<ChildSurface>> mChildSurfaces;
 
     bool mBeingDestroyed = false;
