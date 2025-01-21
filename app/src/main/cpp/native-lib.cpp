@@ -1,33 +1,51 @@
 #include <jni.h>
-#include <string>
-#include <android/log.h>
 #include <android/native_window_jni.h>
-#include <android/surface_control.h>
+#include <memory>
+#include <string>
+
+#include "HelloSurfaceControl.h"
+#include "Log.h"
 
 #define LOG_TAG "SurfaceControlApp"
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+std::unique_ptr<HelloSurfaceControl> helloSurfaceControl;
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_hellosurfacecontrol_MainActivity_nativeInitSurfaceControl(
         JNIEnv* env,
         jobject /* this */,
         jobject surface) {
+    assert(!helloSurfaceControl);
+    helloSurfaceControl = std::make_unique<HelloSurfaceControl>();
+
     ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
     if (window == nullptr) {
         LOGE("Failed to get native window from surface");
         return;
     }
 
-    // Example of using Surface Control
-    ASurfaceControl* surfaceControl = ASurfaceControl_createFromWindow(window, "ExampleSurfaceControl");
-    if (surfaceControl == nullptr) {
-        LOGE("Failed to create Surface Control");
+    if (!helloSurfaceControl->init(window)) {
+        LOGE("Failed to init HelloSurfaceControl");
         return;
     }
+}
 
-    // Perform operations with surfaceControl...
-
-    // Clean up
-    ASurfaceControl_release(surfaceControl);
-    ANativeWindow_release(window);
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_hellosurfacecontrol_MainActivity_nativeUpdateSurfaceControl(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jobject surface,
+                                                                             jint format,
+                                                                             jint width,
+                                                                             jint height) {
+    assert(helloSurfaceControl);
+    helloSurfaceControl->update(format, width, height);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_hellosurfacecontrol_MainActivity_nativeDestroySurfaceControl(JNIEnv *env,
+                                                                              jobject thiz,
+                                                                              jobject surface) {
+    assert(helloSurfaceControl);
+    helloSurfaceControl.reset();
 }

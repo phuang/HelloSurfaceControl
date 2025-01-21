@@ -25,13 +25,29 @@ project("hellosurfacecontrol")
 # for GameActivity/NativeActivity derived applications, the same library name must be
 # used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
-    # List C/C++ source files with relative paths to this CMakeLists.txt.
-    native-lib.cpp)
+        # List C/C++ source files with relative paths to this CMakeLists.txt.
+        native-lib.cpp
+        HelloSurfaceControl.cc
+        HelloSurfaceControl.h
+        ChildSurface.cc
+        ChildSurface.h
+        BufferQueue.cc
+        BufferQueue.h)
+
+# Specifies defines for the compiler
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        -DVK_USE_PLATFORM_ANDROID_KHR=1
+        -DGL_GLEXT_PROTOTYPES=1
+    )
 
 # Specifies libraries CMake should link to your target library. You
 # can link libraries from various origins, such as libraries defined in this
 # build script, prebuilt third-party libraries, or Android system libraries.
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    # List libraries link to the target library
-    android
-    log)
+        # List libraries link to the target library
+        android
+        egl
+        GLESv2
+        GLESv3
+        log
+        vulkan)
