@@ -197,7 +197,6 @@ void HelloSurfaceControl::update(int format, int width, int height) {
 }
 
 void HelloSurfaceControl::drawOnRT() {
-    LOGD("HelloSurfaceControl::drawOnRT()");
     ASurfaceTransaction *t = ASurfaceTransaction_create();
 
     const float kAnimationPeriod = 200.0f;

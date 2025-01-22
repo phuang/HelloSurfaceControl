@@ -11,8 +11,9 @@
 #include <EGL/egl.h>
 #include <vulkan/vulkan.h>
 
-#include <vector>
 #include <deque>
+#include <mutex>
+#include <vector>
 
 class BufferQueue {
 public:
@@ -43,6 +44,7 @@ private:
     std::vector<VkImage> mImages;
     std::vector<EGLImage> mEGLImages;
 
+    std::mutex mMutex;
     std::deque<Image> mAvailableImages;
     std::deque<Image> mProducedImages;
     std::deque<Image> mInPresentImages;

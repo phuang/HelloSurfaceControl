@@ -4,7 +4,7 @@
 
 #include "BufferQueue.h"
 
-#include <assert.h>
+#include <cassert>
 #include <EGL/eglext.h>
 #include <unistd.h>
 
@@ -147,6 +147,7 @@ void BufferQueue::resize(int width, int height) {
 }
 
 BufferQueue::Image BufferQueue::produceImage() {
+    std::unique_lock<std::mutex> lock(mMutex);
     assert(mCurrentProduceImage.buffer == nullptr);
     if (mAvailableImages.empty()) {
         return {};
@@ -157,12 +158,14 @@ BufferQueue::Image BufferQueue::produceImage() {
 }
 
 void BufferQueue::enqueueProducedImage() {
+    std::unique_lock<std::mutex> lock(mMutex);
     assert(mCurrentProduceImage.buffer != nullptr);
     mProducedImages.push_back(mCurrentProduceImage);
     mCurrentProduceImage = {};
 }
 
 BufferQueue::Image BufferQueue::presentImage() {
+    std::unique_lock<std::mutex> lock(mMutex);
     if (mProducedImages.empty()) {
         return {};
     }
@@ -172,6 +175,7 @@ BufferQueue::Image BufferQueue::presentImage() {
 }
 
 void BufferQueue::releasePresentImage(int fenceFd) {
+    std::unique_lock<std::mutex> lock(mMutex);
     assert(!mInPresentImages.empty());
     auto image = mInPresentImages.front();
     mInPresentImages.pop_front();
