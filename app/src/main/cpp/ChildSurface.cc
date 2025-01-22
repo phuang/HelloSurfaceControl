@@ -334,7 +334,7 @@ void ChildSurface::bufferReleasedCallback(void *context, int fenceFd) {
         if (fenceFd > 0) {
             close(fenceFd);
         }
-        LOGE("ChildSurface is already destroyed");
+        LOGD("ChildSurface is already destroyed");
     }
     delete weakSelf;
 }
