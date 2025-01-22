@@ -197,7 +197,7 @@ void HelloSurfaceControl::update(int format, int width, int height) {
 }
 
 void HelloSurfaceControl::drawOnRT() {
-    ASurfaceTransaction *t = ASurfaceTransaction_create();
+    ASurfaceTransaction *transaction = ASurfaceTransaction_create();
 
     const float kAnimationPeriod = 200.0f;
     float factor = std::abs(
@@ -222,12 +222,12 @@ void HelloSurfaceControl::drawOnRT() {
 
     for (auto &childSurface: mChildSurfaces) {
         childSurface->draw();
-        childSurface->applyChanges(t);
+        childSurface->applyChanges(transaction);
     }
 
     glFinish();
-    ASurfaceTransaction_apply(t);
-    ASurfaceTransaction_delete(t);
+    ASurfaceTransaction_apply(transaction);
+    ASurfaceTransaction_delete(transaction);
     mFrameCount++;
 }
 
