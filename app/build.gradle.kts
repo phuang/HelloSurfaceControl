@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.hellosurfacecontrol"
-    compileSdkPreview = "Baklava"
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.hellosurfacecontrol"
@@ -38,8 +38,8 @@ android {
     buildFeatures {
         viewBinding = true
     }
-    buildToolsVersion = "36.0.0 rc3"
-    ndkVersion = "28.0.12916984 rc3"
+    buildToolsVersion = "35.0.1"
+    ndkVersion = "27.0.12077973"
 }
 
 dependencies {

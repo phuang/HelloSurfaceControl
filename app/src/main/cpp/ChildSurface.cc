@@ -16,12 +16,14 @@
 #define LOG_TAG "SurfaceControlApp"
 
 static void *LibAndroid = nullptr;
+using PFN_OnBufferRelease = void (*)(void *_Null_unspecified context,
+                                     int release_fence_fd);
 using PFN_ASurfaceTransaction_setBufferWithRelease = void (*)(
         ASurfaceTransaction *_Nonnull transaction,
         ASurfaceControl *_Nonnull surface_control,
         AHardwareBuffer *_Nonnull buffer,
         int acquire_fence_fd, void *_Null_unspecified context,
-        ASurfaceTransaction_OnBufferRelease _Nonnull func);
+        PFN_OnBufferRelease _Nonnull func);
 static PFN_ASurfaceTransaction_setBufferWithRelease pASurfaceTransaction_setBufferWithRelease = nullptr;
 
 static std::chrono::system_clock::time_point kStartTime = std::chrono::system_clock::now();
@@ -32,6 +34,9 @@ ChildSurface::ChildSurface(VkDevice device, VkQueue queue) :
         LibAndroid = dlopen("libandroid.so", RTLD_NOW);
         pASurfaceTransaction_setBufferWithRelease = reinterpret_cast<PFN_ASurfaceTransaction_setBufferWithRelease>(dlsym(
                 LibAndroid, "ASurfaceTransaction_setBufferWithRelease"));
+        if (!pASurfaceTransaction_setBufferWithRelease) {
+            LOGE("Failed to find ASurfaceTransaction_setBufferWithRelease which is available in Android SDK API level 36+");
+        }
     }
 }
 
