@@ -47,8 +47,13 @@ private:
     VkDevice mDevice = VK_NULL_HANDLE;
     VkQueue mQueue = VK_NULL_HANDLE;
 
-    ANativeWindow* mWindow = nullptr;
-    ASurfaceControl* mSurfaceControl = nullptr;
+    struct ANativeWindowDeleter {
+        void operator()(ANativeWindow* window) const {
+            ANativeWindow_release(window);
+        }
+    };
+    std::unique_ptr<ANativeWindow, ANativeWindowDeleter> mWindow;
+    UniqueASurfaceControl mSurfaceControl;
 
     int mWidth = 0;
     int mHeight = 0;

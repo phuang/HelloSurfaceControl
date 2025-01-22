@@ -145,8 +145,8 @@ bool HelloSurfaceControl::initOnRT(ANativeWindow *window) {
     assert(mWindow == nullptr);
     assert(mSurfaceControl == nullptr);
 
-    mWindow = window;
-    mSurfaceControl = ASurfaceControl_createFromWindow(mWindow, "HelloSurfaceControl");
+    mWindow.reset(window);
+    mSurfaceControl.reset(ASurfaceControl_createFromWindow(mWindow.get(), "HelloSurfaceControl"));
     if (mSurfaceControl == nullptr) {
         LOGE("Failed to create ASurfaceControl from ANativeWindow");
         return false;
@@ -157,7 +157,7 @@ bool HelloSurfaceControl::initOnRT(ANativeWindow *window) {
     float delta = 1.0f;
     for (int i = 0; i < kChildrenCount; i++) {
         mChildSurfaces.emplace_back(std::make_shared<ChildSurface>(mDevice, mQueue));
-        mChildSurfaces.back()->init(mSurfaceControl, "HelloSurfaceControlChild");
+        mChildSurfaces.back()->init(mSurfaceControl.get(), "HelloSurfaceControlChild");
         mChildSurfaces.back()->resize(kChildSize, kChildSize);
         mChildSurfaces.back()->setPosition(x, y);
         mChildSurfaces.back()->setAnimationDelta(delta);
@@ -234,14 +234,8 @@ void HelloSurfaceControl::drawOnRT() {
 void HelloSurfaceControl::releaseOnRT() {
     mChildSurfaces.clear();
 
-    if (mSurfaceControl) {
-        ASurfaceControl_release(mSurfaceControl);
-        mSurfaceControl = nullptr;
-    }
-    if (mWindow) {
-        ANativeWindow_release(mWindow);
-        mWindow = nullptr;
-    }
+    mSurfaceControl = nullptr;
+    mWindow = nullptr;
 }
 
 void HelloSurfaceControl::runOnRT() {

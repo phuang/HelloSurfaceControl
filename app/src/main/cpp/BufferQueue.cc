@@ -35,7 +35,7 @@ void BufferQueue::createBuffers() {
         desc.usage =
                 AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
         AHardwareBuffer_allocate(&desc, &buffer);
-        mBuffers.push_back(buffer);
+        mBuffers.emplace_back(buffer);
 
         // Import the AHardwareBuffer to the EGLImage
         EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(buffer);
@@ -127,10 +127,6 @@ void BufferQueue::releaseBuffers() {
     }
     mImages.clear();
 
-    // Release old buffers
-    for (auto buffer: mBuffers) {
-        AHardwareBuffer_release(buffer);
-    }
     mBuffers.clear();
 }
 

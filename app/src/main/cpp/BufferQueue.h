@@ -15,6 +15,14 @@
 #include <mutex>
 #include <vector>
 
+struct AHardwareBufferDeleter {
+    void operator()(AHardwareBuffer* buffer) const {
+        AHardwareBuffer_release(buffer);
+    }
+};
+
+using UniqueAHardwareBuffer = std::unique_ptr<AHardwareBuffer, AHardwareBufferDeleter>;
+
 class BufferQueue {
 public:
     explicit BufferQueue(VkDevice device);
@@ -40,7 +48,7 @@ private:
     VkDevice mDevice = VK_NULL_HANDLE;
     int mWidth = 0;
     int mHeight = 0;
-    std::vector<AHardwareBuffer*> mBuffers;
+    std::vector<UniqueAHardwareBuffer> mBuffers;
     std::vector<VkImage> mImages;
     std::vector<EGLImage> mEGLImages;
 

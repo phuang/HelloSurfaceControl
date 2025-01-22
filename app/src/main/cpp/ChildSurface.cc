@@ -41,10 +41,7 @@ ChildSurface::ChildSurface(VkDevice device, VkQueue queue) :
 }
 
 ChildSurface::~ChildSurface() {
-    if (mSurfaceControl) {
-        ASurfaceControl_release(mSurfaceControl);
-    }
-
+    mSurfaceControl = nullptr;
     // release gl objects
     glDeleteProgram(mProgram);
     glDeleteBuffers(1, &mVbo);
@@ -56,7 +53,7 @@ ChildSurface::~ChildSurface() {
 bool ChildSurface::init(ASurfaceControl *parent, const char *debugName) {
     assert(mSurfaceControl == nullptr);
 
-    mSurfaceControl = ASurfaceControl_create(parent, debugName);
+    mSurfaceControl.reset(ASurfaceControl_create(parent, debugName));
     if (mSurfaceControl == nullptr) {
         LOGE("Failed to create ASurfaceControl");
         return false;
@@ -353,32 +350,34 @@ void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
     if (image.buffer != nullptr) {
         // TODO: Provide the fenceFd
         std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
-        pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl, image.buffer, -1,
+        pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl.get(), image.buffer,
+                                                  -1,
                                                   weakSelf, ChildSurface::bufferReleasedCallback);
     }
     if (mChangedFlags[CROP_CHANGED]) {
-        ASurfaceTransaction_setCrop(transaction, mSurfaceControl, mCrop);
+        ASurfaceTransaction_setCrop(transaction, mSurfaceControl.get(), mCrop);
     }
     if (mChangedFlags[POSITION_CHANGED]) {
-        ASurfaceTransaction_setPosition(transaction, mSurfaceControl, mLeft, mTop);
+        ASurfaceTransaction_setPosition(transaction, mSurfaceControl.get(), mLeft, mTop);
     }
     if (mChangedFlags[TRANSFORM_CHANGED]) {
-        ASurfaceTransaction_setBufferTransform(transaction, mSurfaceControl, mTransform);
+        ASurfaceTransaction_setBufferTransform(transaction, mSurfaceControl.get(), mTransform);
     }
     if (mChangedFlags[SCALE_CHANGED]) {
-        ASurfaceTransaction_setScale(transaction, mSurfaceControl, mXScale, mYScale);
+        ASurfaceTransaction_setScale(transaction, mSurfaceControl.get(), mXScale, mYScale);
     }
     if (mChangedFlags[ALPHA_CHANGED]) {
-        ASurfaceTransaction_setBufferAlpha(transaction, mSurfaceControl, mAlpha);
+        ASurfaceTransaction_setBufferAlpha(transaction, mSurfaceControl.get(), mAlpha);
     }
     if (mChangedFlags[COLOR_CHANGED]) {
-        ASurfaceTransaction_setColor(transaction, mSurfaceControl, mColor[0], mColor[1], mColor[2],
+        ASurfaceTransaction_setColor(transaction, mSurfaceControl.get(), mColor[0], mColor[1],
+                                     mColor[2],
                                      mColor[3], ADataSpace::ADATASPACE_UNKNOWN);
     }
     if (mChangedFlags[TRANSPARENT_CHANGED]) {
-        ASurfaceTransaction_setBufferTransparency(transaction, mSurfaceControl, mTransparent
-                                                                                ? ASURFACE_TRANSACTION_TRANSPARENCY_TRANSPARENT
-                                                                                : ASURFACE_TRANSACTION_TRANSPARENCY_OPAQUE);
+        ASurfaceTransaction_setBufferTransparency(transaction, mSurfaceControl.get(), mTransparent
+                                                                                      ? ASURFACE_TRANSACTION_TRANSPARENCY_TRANSPARENT
+                                                                                      : ASURFACE_TRANSACTION_TRANSPARENCY_OPAQUE);
     }
 
     mChangedFlags.reset();

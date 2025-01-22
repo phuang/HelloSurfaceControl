@@ -13,6 +13,14 @@
 
 #include "BufferQueue.h"
 
+struct ASurfaceControlDeleter {
+    void operator()(ASurfaceControl* surfaceControl) const {
+        ASurfaceControl_release(surfaceControl);
+    }
+};
+
+using UniqueASurfaceControl = std::unique_ptr<ASurfaceControl, ASurfaceControlDeleter>;
+
 class ChildSurface : public std::enable_shared_from_this<ChildSurface> {
 public:
     ChildSurface(VkDevice device, VkQueue queue);
@@ -22,27 +30,12 @@ public:
     void resize(int width, int height);
     void draw();
 
-    [[nodiscard]] int getWidth() const {
-        return mWidth;
-    }
-
-    [[nodiscard]] int getHeight() const {
-        return mHeight;
-    }
-
-    ASurfaceControl *getSurfaceControl() {
-        return mSurfaceControl;
-    }
-
     void setCrop(const ARect& crop) {
         if (std::memcmp(&crop, &mCrop, sizeof(crop)) == 0) {
             return;
         }
         mChangedFlags[CROP_CHANGED] = true;
         mCrop = crop;
-    }
-    [[nodiscard]] const ARect& getCrop() const {
-        return mCrop;
     }
 
     void setPosition(int left, int top) {
@@ -53,12 +46,6 @@ public:
         mLeft = left;
         mTop = top;
     }
-    [[nodiscard]] int getLeft() const {
-        return mLeft;
-    }
-    [[nodiscard]] int getTop() const {
-        return mTop;
-    }
 
     void setTransform(int transform) {
         if (mTransform == transform) {
@@ -66,9 +53,6 @@ public:
         }
         mChangedFlags[TRANSFORM_CHANGED] = true;
         mTransform = transform;
-    }
-    [[nodiscard]] int getTransform() const {
-        return mTransform;
     }
 
     void setScale(float xScale, float yScale) {
@@ -79,12 +63,6 @@ public:
         mXScale = xScale;
         mYScale = yScale;
     }
-    [[nodiscard]] float getXScale() const {
-        return mXScale;
-    }
-    [[nodiscard]] float getYScale() const {
-        return mYScale;
-    }
 
     void setAlpha(float alpha) {
         if (mAlpha == alpha) {
@@ -92,9 +70,6 @@ public:
         }
         mChangedFlags[ALPHA_CHANGED] = true;
         mAlpha = alpha;
-    }
-    [[nodiscard]] float getAlpha() const {
-        return mAlpha;
     }
 
     void setColor(float r, float g, float b, float a) {
@@ -133,7 +108,9 @@ private:
 
     VkDevice mDevice = VK_NULL_HANDLE;
     VkQueue mQueue = VK_NULL_HANDLE;
-    ASurfaceControl* mSurfaceControl = nullptr;
+
+    UniqueASurfaceControl mSurfaceControl;
+
     int mWidth = 0;
     int mHeight = 0;
 
@@ -147,7 +124,6 @@ private:
     GLuint mRbo = 0;
 
     enum : int {
-        BUFFER_CHANGED = 0,
         CROP_CHANGED,
         POSITION_CHANGED,
         TRANSFORM_CHANGED,
