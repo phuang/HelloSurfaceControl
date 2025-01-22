@@ -25,14 +25,13 @@ project("hellosurfacecontrol")
 # for GameActivity/NativeActivity derived applications, the same library name must be
 # used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
-        # List C/C++ source files with relative paths to this CMakeLists.txt.
         native-lib.cpp
-        HelloSurfaceControl.cc
-        HelloSurfaceControl.h
-        ChildSurface.cc
-        ChildSurface.h
         BufferQueue.cc
         BufferQueue.h
+        ChildSurface.cc
+        ChildSurface.h
+        HelloSurfaceControl.cc
+        HelloSurfaceControl.h
         Matrix.h)
 
 # Specifies defines for the compiler
