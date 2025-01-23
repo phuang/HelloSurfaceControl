@@ -30,6 +30,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         BufferQueue.h
         ChildSurface.cc
         ChildSurface.h
+        GLFence.cc
+        GLFence.h
         HelloSurfaceControl.cc
         HelloSurfaceControl.h
         Matrix.h)
@@ -46,7 +48,8 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
 # build script, prebuilt third-party libraries, or Android system libraries.
 target_link_libraries(${CMAKE_PROJECT_NAME}
         android
-        egl
+        EGL
+        GLESv2
         GLESv3
         log
         vulkan)

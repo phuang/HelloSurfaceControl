@@ -15,6 +15,8 @@
 #include <mutex>
 #include <vector>
 
+class GLFence;
+
 struct AHardwareBufferDeleter {
     void operator()(AHardwareBuffer* buffer) const {
         AHardwareBuffer_release(buffer);
@@ -36,10 +38,12 @@ public:
     struct Image {
         AHardwareBuffer* buffer = nullptr;
         EGLImage eglImage = EGL_NO_IMAGE;
+        std::shared_ptr<GLFence> fence;
+        int fenceFd = -1;
     };
 
     Image produceImage();
-    void enqueueProducedImage();
+    void enqueueProducedImage(std::shared_ptr<GLFence> fence);
 
     Image presentImage();
     void releasePresentImage(int fenceFd);

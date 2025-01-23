@@ -10,6 +10,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 
+#include "GLFence.h"
 #include "Log.h"
 #include "Matrix.h"
 
@@ -270,6 +271,11 @@ void ChildSurface::drawGL() {
     if (image.buffer == nullptr) {
         return;
     }
+
+    if (image.fence) {
+        image.fence->wait();
+    }
+
     GLuint texture = bindEGLImageAsTexture(image.eglImage);
 
     // Bind the framebuffer
@@ -324,7 +330,7 @@ void ChildSurface::drawGL() {
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    mBufferQueue.enqueueProducedImage();
+    mBufferQueue.enqueueProducedImage(GLFence::Create());
 }
 
 // static
@@ -348,10 +354,9 @@ void ChildSurface::bufferReleased(int fenceFd) {
 void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
     auto image = mBufferQueue.presentImage();
     if (image.buffer != nullptr) {
-        // TODO: Provide the fenceFd
         std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
         pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl.get(), image.buffer,
-                                                  -1,
+                                                  image.fence ? image.fence->getFd() : -1,
                                                   weakSelf, ChildSurface::bufferReleasedCallback);
     }
     if (mChangedFlags[CROP_CHANGED]) {

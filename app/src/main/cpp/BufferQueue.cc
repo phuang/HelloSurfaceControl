@@ -8,6 +8,7 @@
 #include <EGL/eglext.h>
 #include <unistd.h>
 
+#include "GLFence.h"
 #include "Log.h"
 
 #define LOG_TAG "SurfaceControlApp"
@@ -150,13 +151,17 @@ BufferQueue::Image BufferQueue::produceImage() {
     }
     mCurrentProduceImage = mAvailableImages.front();
     mAvailableImages.pop_front();
+    if (mCurrentProduceImage.fenceFd >= 0) {
+        mCurrentProduceImage.fence = GLFence::CreateFromFenceFd(mCurrentProduceImage.fenceFd);
+    }
     return mCurrentProduceImage;
 }
 
-void BufferQueue::enqueueProducedImage() {
+void BufferQueue::enqueueProducedImage(std::shared_ptr<GLFence> fence) {
     std::unique_lock<std::mutex> lock(mMutex);
     assert(mCurrentProduceImage.buffer != nullptr);
     mProducedImages.push_back(mCurrentProduceImage);
+    mCurrentProduceImage.fence = std::move(fence);
     mCurrentProduceImage = {};
 }
 
@@ -176,9 +181,8 @@ void BufferQueue::releasePresentImage(int fenceFd) {
     auto image = mInPresentImages.front();
     mInPresentImages.pop_front();
     mAvailableImages.push_back(image);
-
-    // TODO: Wait for the fence to signal
-    if (fenceFd >= 0) {
-        close(fenceFd);
-    }
+    mAvailableImages.back().fence = nullptr;
+    // releaseProducerFence(fenceFd) could be called off gl thread, fence fd cannot be imported off
+    // the gl thread, so we have to defer importing the fence.
+    mAvailableImages.back().fenceFd = fenceFd;
 }

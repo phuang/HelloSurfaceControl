@@ -225,7 +225,6 @@ void HelloSurfaceControl::drawOnRT() {
         childSurface->applyChanges(transaction);
     }
 
-    glFinish();
     ASurfaceTransaction_apply(transaction);
     ASurfaceTransaction_delete(transaction);
     mFrameCount++;
