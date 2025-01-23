@@ -267,7 +267,7 @@ int bindEGLImageAsTexture(EGLImage eglImage) {
 
 
 void ChildSurface::drawGL() {
-    const auto* image = mBufferQueue.produceImage();
+    const auto *image = mBufferQueue.produceImage();
     if (!image) {
         return;
     }
@@ -294,15 +294,21 @@ void ChildSurface::drawGL() {
     // Set the viewport
     glViewport(0, 0, mWidth, mHeight);
 
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now() - kStartTime).count();
+
+    auto computeColor = [time, this](int period) {
+        period *= mDelta;
+        float result = time % (period * 2) - period;
+        return std::abs(result / period);
+    };
+
     // Clear the screen to red
-    glClearColor(0.0f, 0.0f, 0.3f, 1.0f);
+    glClearColor(computeColor(1000), computeColor(3000), computeColor(2000), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Use the shader program
     glUseProgram(mProgram);
-
-    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now() - kStartTime).count();
 
     auto computeAngle = [time, this](int period) {
         period *= mDelta;
@@ -352,11 +358,12 @@ void ChildSurface::bufferReleased(int fenceFd) {
 }
 
 void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
-    const auto* image = mBufferQueue.presentImage();
+    const auto *image = mBufferQueue.presentImage();
     if (image) {
         std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
         pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl.get(), image->buffer,
-                                                  image->fence ? image->fence->getFd().release() : -1,
+                                                  image->fence ? image->fence->getFd().release()
+                                                               : -1,
                                                   weakSelf, ChildSurface::bufferReleasedCallback);
     }
     if (mChangedFlags[CROP_CHANGED]) {
