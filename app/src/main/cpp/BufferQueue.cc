@@ -151,9 +151,8 @@ const BufferQueue::Image* BufferQueue::produceImage() {
     }
     mCurrentProduceImage = std::move(mAvailableImages.front());
     mAvailableImages.pop_front();
-    if (mCurrentProduceImage->fenceFd != -1) {
-        mCurrentProduceImage->fence = GLFence::CreateFromFenceFd(mCurrentProduceImage->fenceFd);
-        mCurrentProduceImage->fenceFd = -1;
+    if (mCurrentProduceImage->fenceFd.isValid()) {
+        mCurrentProduceImage->fence = GLFence::CreateFromFenceFd(std::move(mCurrentProduceImage->fenceFd));
     }
     return mCurrentProduceImage.get();
 }
@@ -183,6 +182,6 @@ void BufferQueue::releasePresentImage(int fenceFd) {
     mInPresentImages.pop_front();
     // releaseProducerFence(fenceFd) could be called off gl thread, fence fd cannot be imported off
     // the gl thread, so we have to defer importing the fence.
-    image->fenceFd = fenceFd;
+    image->fenceFd = ScopedFd(fenceFd);
     mAvailableImages.push_back(std::move(image));
 }

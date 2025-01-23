@@ -34,7 +34,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         GLFence.h
         HelloSurfaceControl.cc
         HelloSurfaceControl.h
-        Matrix.h)
+        Matrix.h
+        ScopedFd.h)
 
 # Specifies defines for the compiler
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

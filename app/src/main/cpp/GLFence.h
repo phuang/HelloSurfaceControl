@@ -9,16 +9,18 @@
 #include <EGL/eglext.h>
 #include <memory>
 
+#include "ScopedFd.h"
+
 class GLFence : public std::enable_shared_from_this<GLFence> {
 public:
     GLFence();
     ~GLFence();
 
     static std::shared_ptr<GLFence> Create();
-    static std::shared_ptr<GLFence> CreateFromFenceFd(int fenceFd);
+    static std::shared_ptr<GLFence> CreateFromFenceFd(ScopedFd fenceFd);
 
     void wait();
-    int getFd();
+    ScopedFd getFd();
 
 private:
     bool init(EGLint type, const EGLint *attribs);

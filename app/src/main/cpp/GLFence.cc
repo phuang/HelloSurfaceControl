@@ -28,8 +28,8 @@ std::shared_ptr<GLFence> GLFence::Create() {
 }
 
 // static
-std::shared_ptr<GLFence> GLFence::CreateFromFenceFd(int fenceFd) {
-    EGLint attribs[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, fenceFd, EGL_NONE};
+std::shared_ptr<GLFence> GLFence::CreateFromFenceFd(ScopedFd fenceFd) {
+    EGLint attribs[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, fenceFd.release(), EGL_NONE};
     auto fence = std::make_shared<GLFence>();
     if (!fence->init(EGL_SYNC_NATIVE_FENCE_ANDROID, attribs)) {
         return nullptr;
@@ -52,19 +52,19 @@ void GLFence::wait() {
     }
 }
 
-int GLFence::getFd() {
+ScopedFd GLFence::getFd() {
     if (eglDupNativeFenceFDANDROIDFn == nullptr) {
         eglDupNativeFenceFDANDROIDFn = reinterpret_cast<PFNEGLDUPNATIVEFENCEFDANDROIDPROC>(
                 eglGetProcAddress("eglDupNativeFenceFDANDROID"));
         if (eglDupNativeFenceFDANDROIDFn == nullptr) {
             LOGE("Failed to eglGetProcAddress eglDupNativeFenceFDANDROID");
-            return -1;
+            return {};
         }
     }
     EGLint fd = eglDupNativeFenceFDANDROIDFn(eglGetCurrentDisplay(), mSync);
     if (fd < 0) {
         LOGE("Failed to eglDupNativeFenceFDANDROID");
-        return -1;
+        return {};
     }
-    return fd;
+    return ScopedFd(fd);
 }

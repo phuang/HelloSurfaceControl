@@ -356,7 +356,7 @@ void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
     if (image) {
         std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
         pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl.get(), image->buffer,
-                                                  image->fence ? image->fence->getFd() : -1,
+                                                  image->fence ? image->fence->getFd().release() : -1,
                                                   weakSelf, ChildSurface::bufferReleasedCallback);
     }
     if (mChangedFlags[CROP_CHANGED]) {

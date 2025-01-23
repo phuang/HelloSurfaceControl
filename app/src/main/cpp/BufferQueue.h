@@ -15,6 +15,8 @@
 #include <mutex>
 #include <vector>
 
+#include "ScopedFd.h"
+
 class GLFence;
 
 struct AHardwareBufferDeleter {
@@ -40,7 +42,7 @@ public:
         AHardwareBuffer* buffer = nullptr;
         EGLImage eglImage = EGL_NO_IMAGE;
         std::shared_ptr<GLFence> fence;
-        int fenceFd = -1;
+        ScopedFd fenceFd;
     };
 
     const Image* produceImage();
