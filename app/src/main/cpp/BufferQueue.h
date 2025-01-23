@@ -36,16 +36,17 @@ public:
     void releaseBuffers();
 
     struct Image {
+        Image(AHardwareBuffer* buffer, EGLImage eglImage) : buffer(buffer), eglImage(eglImage) {}
         AHardwareBuffer* buffer = nullptr;
         EGLImage eglImage = EGL_NO_IMAGE;
         std::shared_ptr<GLFence> fence;
         int fenceFd = -1;
     };
 
-    Image produceImage();
+    const Image* produceImage();
     void enqueueProducedImage(std::shared_ptr<GLFence> fence);
 
-    Image presentImage();
+    const Image* presentImage();
     void releasePresentImage(int fenceFd);
 
 private:
@@ -57,11 +58,11 @@ private:
     std::vector<EGLImage> mEGLImages;
 
     std::mutex mMutex;
-    std::deque<Image> mAvailableImages;
-    std::deque<Image> mProducedImages;
-    std::deque<Image> mInPresentImages;
+    std::deque<std::unique_ptr<Image>> mAvailableImages;
+    std::deque<std::unique_ptr<Image>> mProducedImages;
+    std::deque<std::unique_ptr<Image>> mInPresentImages;
 
-    Image mCurrentProduceImage = {};
+    std::unique_ptr<Image> mCurrentProduceImage;
 };
 
 

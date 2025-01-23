@@ -21,7 +21,7 @@ GLFence::~GLFence() {
 // static
 std::shared_ptr<GLFence> GLFence::Create() {
     auto fence = std::make_shared<GLFence>();
-    if (!fence->init(EGL_SYNC_FENCE_KHR, nullptr)) {
+    if (!fence->init(EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr)) {
         return nullptr;
     }
     return fence;
@@ -31,7 +31,7 @@ std::shared_ptr<GLFence> GLFence::Create() {
 std::shared_ptr<GLFence> GLFence::CreateFromFenceFd(int fenceFd) {
     EGLint attribs[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, fenceFd, EGL_NONE};
     auto fence = std::make_shared<GLFence>();
-    if (!fence->init(EGL_SYNC_FENCE_KHR, attribs)) {
+    if (!fence->init(EGL_SYNC_NATIVE_FENCE_ANDROID, attribs)) {
         return nullptr;
     }
     return fence;
@@ -47,7 +47,9 @@ bool GLFence::init(EGLint type, const EGLint *attribs) {
 }
 
 void GLFence::wait() {
-    eglWaitSyncKHR(eglGetCurrentDisplay(), mSync, 0);
+    if (eglWaitSyncKHR(eglGetCurrentDisplay(), mSync, 0) == EGL_FALSE) {
+        LOGE("Failed to eglWaitSyncKHR");
+    }
 }
 
 int GLFence::getFd() {

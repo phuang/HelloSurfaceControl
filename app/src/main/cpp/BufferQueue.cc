@@ -49,7 +49,7 @@ void BufferQueue::createBuffers() {
         }
         mEGLImages.push_back(eglImage);
 
-        mAvailableImages.push_back({buffer, eglImage});
+        mAvailableImages.push_back(std::make_unique<Image>(buffer, eglImage));
 
         // Create a VkImage with external memory support
         VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
@@ -143,46 +143,46 @@ void BufferQueue::resize(int width, int height) {
     createBuffers();
 }
 
-BufferQueue::Image BufferQueue::produceImage() {
+const BufferQueue::Image* BufferQueue::produceImage() {
     std::unique_lock<std::mutex> lock(mMutex);
-    assert(mCurrentProduceImage.buffer == nullptr);
+    assert(!mCurrentProduceImage);
     if (mAvailableImages.empty()) {
-        return {};
+        return nullptr;
     }
-    mCurrentProduceImage = mAvailableImages.front();
+    mCurrentProduceImage = std::move(mAvailableImages.front());
     mAvailableImages.pop_front();
-    if (mCurrentProduceImage.fenceFd >= 0) {
-        mCurrentProduceImage.fence = GLFence::CreateFromFenceFd(mCurrentProduceImage.fenceFd);
+    if (mCurrentProduceImage->fenceFd != -1) {
+        mCurrentProduceImage->fence = GLFence::CreateFromFenceFd(mCurrentProduceImage->fenceFd);
+        mCurrentProduceImage->fenceFd = -1;
     }
-    return mCurrentProduceImage;
+    return mCurrentProduceImage.get();
 }
 
 void BufferQueue::enqueueProducedImage(std::shared_ptr<GLFence> fence) {
     std::unique_lock<std::mutex> lock(mMutex);
-    assert(mCurrentProduceImage.buffer != nullptr);
-    mProducedImages.push_back(mCurrentProduceImage);
-    mCurrentProduceImage.fence = std::move(fence);
-    mCurrentProduceImage = {};
+    assert(mCurrentProduceImage);
+    mCurrentProduceImage->fence = std::move(fence);
+    mProducedImages.push_back(std::move(mCurrentProduceImage));
 }
 
-BufferQueue::Image BufferQueue::presentImage() {
+const BufferQueue::Image* BufferQueue::presentImage() {
     std::unique_lock<std::mutex> lock(mMutex);
     if (mProducedImages.empty()) {
-        return {};
+        return nullptr;
     }
-    auto image = mProducedImages.front();
-    mInPresentImages.push_back(image);
-    return image;
+    auto image = std::move(mProducedImages.front());
+    mProducedImages.pop_front();
+    mInPresentImages.push_back(std::move(image));
+    return mInPresentImages.back().get();
 }
 
 void BufferQueue::releasePresentImage(int fenceFd) {
     std::unique_lock<std::mutex> lock(mMutex);
     assert(!mInPresentImages.empty());
-    auto image = mInPresentImages.front();
+    auto image = std::move(mInPresentImages.front());
     mInPresentImages.pop_front();
-    mAvailableImages.push_back(image);
-    mAvailableImages.back().fence = nullptr;
     // releaseProducerFence(fenceFd) could be called off gl thread, fence fd cannot be imported off
     // the gl thread, so we have to defer importing the fence.
-    mAvailableImages.back().fenceFd = fenceFd;
+    image->fenceFd = fenceFd;
+    mAvailableImages.push_back(std::move(image));
 }

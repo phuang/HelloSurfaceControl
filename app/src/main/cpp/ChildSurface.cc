@@ -267,16 +267,16 @@ int bindEGLImageAsTexture(EGLImage eglImage) {
 
 
 void ChildSurface::drawGL() {
-    auto image = mBufferQueue.produceImage();
-    if (image.buffer == nullptr) {
+    const auto* image = mBufferQueue.produceImage();
+    if (!image) {
         return;
     }
 
-    if (image.fence) {
-        image.fence->wait();
+    if (image->fence) {
+        image->fence->wait();
     }
 
-    GLuint texture = bindEGLImageAsTexture(image.eglImage);
+    GLuint texture = bindEGLImageAsTexture(image->eglImage);
 
     // Bind the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, mFbo);
@@ -352,11 +352,11 @@ void ChildSurface::bufferReleased(int fenceFd) {
 }
 
 void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
-    auto image = mBufferQueue.presentImage();
-    if (image.buffer != nullptr) {
+    const auto* image = mBufferQueue.presentImage();
+    if (image) {
         std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
-        pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl.get(), image.buffer,
-                                                  image.fence ? image.fence->getFd() : -1,
+        pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl.get(), image->buffer,
+                                                  image->fence ? image->fence->getFd() : -1,
                                                   weakSelf, ChildSurface::bufferReleasedCallback);
     }
     if (mChangedFlags[CROP_CHANGED]) {
