@@ -62,7 +62,7 @@ ScopedFd GLFence::getFd() {
         }
     }
     EGLint fd = eglDupNativeFenceFDANDROIDFn(eglGetCurrentDisplay(), mSync);
-    if (fd < 0) {
+    if (fd == EGL_NO_NATIVE_FENCE_FD_ANDROID) {
         LOGE("Failed to eglDupNativeFenceFDANDROID");
         return {};
     }

@@ -24,6 +24,7 @@ public:
 
 private:
     bool init(EGLint type, const EGLint *attribs);
+
     EGLSyncKHR mSync = EGL_NO_SYNC_KHR;
 };
 
