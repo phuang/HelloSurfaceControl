@@ -89,14 +89,14 @@ void ChildSurface::draw() {
 // Shader sources (simple shaders to draw a triangle)
 const char *vertexShaderSource =
         R"(#version 300 es
-    in vec4 aPosition;
+    in vec3 aPosition;
     in vec4 aColor;
     out vec4 vColor;
     in vec2 aTexCoord;
     out vec2 vTexCoord;
     uniform mat4 uRotationMatrix;
     void main() {
-        gl_Position = uRotationMatrix * aPosition;
+        gl_Position = uRotationMatrix * vec4(aPosition, 1);
         vColor = aColor;
         vTexCoord = aTexCoord;
     }
@@ -155,58 +155,63 @@ void ChildSurface::createProgram() {
 void ChildSurface::setupBuffers() {
     // clang-format off
     GLfloat cubeVertexArray[] = {
-            // float4 position, float4 color, float2 uv,
-            1, -1, 1, 1, 1, 0, 1, 1, 0, 1,
-            -1, -1, 1, 1, 0, 0, 1, 1, 1, 1,
-            -1, -1, -1, 1, 0, 0, 0, 1, 1, 0,
-            1, -1, -1, 1, 1, 0, 0, 1, 0, 0,
+            // float3 position, float4 color, float2 uv,
+            1, -1, 1, 1, 0, 1, 1, 0, 1,
+            -1, -1, 1, 0, 0, 1, 1, 1, 1,
+            -1, -1, -1, 0, 0, 0, 1, 1, 0,
+            1, -1, -1,  1, 0, 0, 1, 0, 0,
 
-            1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-            1, -1, 1, 1, 1, 0, 1, 1, 1, 1,
-            1, -1, -1, 1, 1, 0, 0, 1, 1, 0,
-            1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
+            1, 1, 1, 1, 1, 1, 1, 0, 1,
+            1, -1, 1, 1, 0, 1, 1, 1, 1,
+            1, -1, -1, 1, 0, 0, 1, 1, 0,
+            1, 1, -1, 1, 1, 0, 1, 0, 0,
 
-            -1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 1, -1, 1, 1, 1, 0, 1, 1, 0,
-            -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
+            -1, 1, 1, 0, 1, 1, 1, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, -1, 1, 1, 0, 1, 1, 0,
+            -1, 1, -1, 0, 1, 0, 1, 0, 0,
 
-            -1, -1, 1, 1, 0, 0, 1, 1, 0, 1,
-            -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
-            -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
-            -1, -1, -1, 1, 0, 0, 0, 1, 0, 0,
+            -1, -1, 1, 0, 0, 1, 1, 0, 1,
+            -1, 1, 1, 0, 1, 1, 1, 1, 1,
+            -1, 1, -1, 0, 1, 0, 1, 1, 0,
+            -1, -1, -1, 0, 0, 0, 1, 0, 0,
 
-            1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-            -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
-            -1, -1, 1, 1, 0, 0, 1, 1, 1, 0,
-            1, -1, 1, 1, 1, 0, 1, 1, 0, 0,
+            1, 1, 1, 1, 1, 1, 1, 0, 1,
+            -1, 1, 1, 0, 1, 1, 1, 1, 1,
+            -1, -1, 1, 0, 0, 1, 1, 1, 0,
+            1, -1, 1, 1, 0, 1, 1, 0, 0,
 
-            1, -1, -1, 1, 1, 0, 0, 1, 0, 1,
-            -1, -1, -1, 1, 0, 0, 0, 1, 1, 1,
-            -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
-            1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
+            1, -1, -1, 1, 0, 0, 1, 0, 1,
+            -1, -1, -1, 0, 0, 0, 1, 1, 1,
+            -1, 1, -1, 0, 1, 0, 1, 1, 0,
+            1, 1, -1, 1, 1, 0, 1, 0, 0,
     };
 
     GLuint cubeIndices[] = {
             0,1,2,
             3,0,2,
+
             4,5,6,
             7,4,6,
+
             8,9,10,
             11,8,10,
+
             12,13,14,
             15,12,14,
+
             16,17,18,
             18,19,16,
+
             20,21,22,
             23,20,22,
     };
     // clang-format on
 
-    constexpr int kStride = 10 * sizeof(GLfloat);
+    constexpr int kStride = 9 * sizeof(GLfloat);
     constexpr int kPositionOffset = 0;
-    constexpr int kColorOffset = 4 * sizeof(GLfloat);
-    constexpr int kTexCoordOffset = 8 * sizeof(GLfloat);
+    constexpr int kColorOffset = 3 * sizeof(GLfloat);
+    constexpr int kTexCoordOffset = 7 * sizeof(GLfloat);
 
 
     // Create VAO, VBO, and EBO
@@ -220,7 +225,7 @@ void ChildSurface::setupBuffers() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray), cubeVertexArray, GL_STATIC_DRAW);
 
 
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, kStride, (GLvoid *) kPositionOffset);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, kStride, (GLvoid *) kPositionOffset);
     glEnableVertexAttribArray(0);
 
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, kStride,
