@@ -69,6 +69,8 @@ bool HelloSurfaceControl::initEGLOnRT() {
         return false;
     }
 
+    LOGD("EGL initialized");
+
     return true;
 }
 
@@ -134,9 +136,9 @@ bool HelloSurfaceControl::initVulkanOnRT() {
 bool HelloSurfaceControl::initOnRT(ANativeWindow *window) {
     LOGD("HelloSurfaceControl::initOnRT()");
 
-    if (!initVulkanOnRT()) {
-        return false;
-    }
+//    if (!initVulkanOnRT()) {
+//        return false;
+//    }
 
     if (!initEGLOnRT()) {
         return false;
@@ -186,7 +188,6 @@ void HelloSurfaceControl::updateOnRT(int format, int width, int height) {
 
     mWidth = width;
     mHeight = height;
-
     mReadyToDraw = true;
 }
 
@@ -198,6 +199,9 @@ void HelloSurfaceControl::update(int format, int width, int height) {
 
 void HelloSurfaceControl::drawOnRT() {
     ASurfaceTransaction *transaction = ASurfaceTransaction_create();
+
+    ASurfaceTransaction_setVisibility(transaction, mSurfaceControl.get(),
+                                      ASurfaceTransactionVisibility::ASURFACE_TRANSACTION_VISIBILITY_SHOW);
 
     const float kAnimationPeriod = 200.0f;
     float factor = std::abs(
@@ -224,7 +228,6 @@ void HelloSurfaceControl::drawOnRT() {
         childSurface->draw();
         childSurface->applyChanges(transaction);
     }
-
     ASurfaceTransaction_apply(transaction);
     ASurfaceTransaction_delete(transaction);
     mFrameCount++;
