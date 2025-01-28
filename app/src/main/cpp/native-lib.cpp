@@ -8,15 +8,15 @@
 
 #define LOG_TAG "SurfaceControlApp"
 
-std::unique_ptr<HelloSurfaceControl> helloSurfaceControl;
+static std::unique_ptr<HelloSurfaceControl> gHelloSurfaceControl;
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_hellosurfacecontrol_MainActivity_nativeInitSurfaceControl(
         JNIEnv* env,
         jobject /* this */,
         jobject surface) {
-    assert(!helloSurfaceControl);
-    helloSurfaceControl = std::make_unique<HelloSurfaceControl>();
+    assert(!gHelloSurfaceControl);
+    gHelloSurfaceControl = std::make_unique<HelloSurfaceControl>();
 
     ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
     if (window == nullptr) {
@@ -24,7 +24,7 @@ Java_com_example_hellosurfacecontrol_MainActivity_nativeInitSurfaceControl(
         return;
     }
 
-    if (!helloSurfaceControl->init(window)) {
+    if (!gHelloSurfaceControl->init(window)) {
         LOGE("Failed to init HelloSurfaceControl");
         return;
     }
@@ -38,14 +38,14 @@ Java_com_example_hellosurfacecontrol_MainActivity_nativeUpdateSurfaceControl(JNI
                                                                              jint format,
                                                                              jint width,
                                                                              jint height) {
-    assert(helloSurfaceControl);
-    helloSurfaceControl->update(format, width, height);
+    assert(gHelloSurfaceControl);
+    gHelloSurfaceControl->update(format, width, height);
 }
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_hellosurfacecontrol_MainActivity_nativeDestroySurfaceControl(JNIEnv *env,
                                                                               jobject thiz,
                                                                               jobject surface) {
-    assert(helloSurfaceControl);
-    helloSurfaceControl.reset();
+    assert(gHelloSurfaceControl);
+    gHelloSurfaceControl = nullptr;
 }
