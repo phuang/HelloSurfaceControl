@@ -34,9 +34,15 @@ void BufferQueue::createBuffers() {
         desc.layers = 1;
         desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
         desc.usage =
-                AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
-        AHardwareBuffer_allocate(&desc, &buffer);
+                AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
+                AHARDWAREBUFFER_USAGE_COMPOSER_OVERLAY;
+        int res = AHardwareBuffer_allocate(&desc, &buffer);\
+        if (res != 0) {
+            LOGE("Failed to allocate AHardwareBuffer");
+            return;
+        }
         mBuffers.emplace_back(buffer);
+
 
         // Import the AHardwareBuffer to the EGLImage
         EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(buffer);
@@ -50,7 +56,7 @@ void BufferQueue::createBuffers() {
         mEGLImages.push_back(eglImage);
 
         mAvailableImages.push_back(std::make_unique<Image>(buffer, eglImage));
-
+#if 0
         // Create a VkImage with external memory support
         VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
         externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -112,6 +118,7 @@ void BufferQueue::createBuffers() {
         }
 
         mImages.push_back(image);
+#endif
     }
 }
 
@@ -143,7 +150,7 @@ void BufferQueue::resize(int width, int height) {
     createBuffers();
 }
 
-const BufferQueue::Image* BufferQueue::produceImage() {
+const BufferQueue::Image *BufferQueue::produceImage() {
     std::unique_lock<std::mutex> lock(mMutex);
     assert(!mCurrentProduceImage);
     if (mAvailableImages.empty()) {
@@ -152,7 +159,8 @@ const BufferQueue::Image* BufferQueue::produceImage() {
     mCurrentProduceImage = std::move(mAvailableImages.front());
     mAvailableImages.pop_front();
     if (mCurrentProduceImage->fenceFd.isValid()) {
-        mCurrentProduceImage->fence = GLFence::CreateFromFenceFd(std::move(mCurrentProduceImage->fenceFd));
+        mCurrentProduceImage->fence = GLFence::CreateFromFenceFd(
+                std::move(mCurrentProduceImage->fenceFd));
     }
     return mCurrentProduceImage.get();
 }
@@ -164,7 +172,7 @@ void BufferQueue::enqueueProducedImage(std::shared_ptr<GLFence> fence) {
     mProducedImages.push_back(std::move(mCurrentProduceImage));
 }
 
-const BufferQueue::Image* BufferQueue::presentImage() {
+const BufferQueue::Image *BufferQueue::presentImage() {
     std::unique_lock<std::mutex> lock(mMutex);
     if (mProducedImages.empty()) {
         return nullptr;
