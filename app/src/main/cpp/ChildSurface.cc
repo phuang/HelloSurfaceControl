@@ -160,53 +160,54 @@ void ChildSurface::setupBuffers() {
             -1, -1, 1, 1, 0, 0, 1, 1, 1, 1,
             -1, -1, -1, 1, 0, 0, 0, 1, 1, 0,
             1, -1, -1, 1, 1, 0, 0, 1, 0, 0,
-            1, -1, 1, 1, 1, 0, 1, 1, 0, 1,
-            -1, -1, -1, 1, 0, 0, 0, 1, 1, 0,
 
             1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
             1, -1, 1, 1, 1, 0, 1, 1, 1, 1,
             1, -1, -1, 1, 1, 0, 0, 1, 1, 0,
             1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
-            1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-            1, -1, -1, 1, 1, 0, 0, 1, 1, 0,
 
             -1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 1, -1, 1, 1, 1, 0, 1, 1, 0,
             -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
-            -1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
-            1, 1, -1, 1, 1, 1, 0, 1, 1, 0,
 
             -1, -1, 1, 1, 0, 0, 1, 1, 0, 1,
             -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
             -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
             -1, -1, -1, 1, 0, 0, 0, 1, 0, 0,
-            -1, -1, 1, 1, 0, 0, 1, 1, 0, 1,
-            -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
 
             1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
             -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
             -1, -1, 1, 1, 0, 0, 1, 1, 1, 0,
-            -1, -1, 1, 1, 0, 0, 1, 1, 1, 0,
             1, -1, 1, 1, 1, 0, 1, 1, 0, 0,
-            1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
 
             1, -1, -1, 1, 1, 0, 0, 1, 0, 1,
             -1, -1, -1, 1, 0, 0, 0, 1, 1, 1,
             -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
             1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
-            1, -1, -1, 1, 1, 0, 0, 1, 0, 1,
-            -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
     };
 
     GLuint cubeIndices[] = {
-            0, 1, 2, 3, 4, 5,
-            6, 7, 8, 9, 10, 11,
-            12, 13, 14, 15, 16, 17,
-            18, 19, 20, 21, 22, 23,
-            24, 25, 26, 27, 28, 29,
-            30, 31, 32, 33, 34, 35
+            0,1,2,
+            3,0,2,
+            4,5,6,
+            7,4,6,
+            8,9,10,
+            11,8,10,
+            12,13,14,
+            15,12,14,
+            16,17,18,
+            18,19,16,
+            20,21,22,
+            23,20,22,
     };
+    // clang-format on
+
+    constexpr int kStride = 10 * sizeof(GLfloat);
+    constexpr int kPositionOffset = 0;
+    constexpr int kColorOffset = 4 * sizeof(GLfloat);
+    constexpr int kTexCoordOffset = 8 * sizeof(GLfloat);
+
 
     // Create VAO, VBO, and EBO
     glGenVertexArrays(1, &mVao);
@@ -218,15 +219,16 @@ void ChildSurface::setupBuffers() {
     glBindBuffer(GL_ARRAY_BUFFER, mVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexArray), cubeVertexArray, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (GLvoid *) 0);
+
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, kStride, (GLvoid *) kPositionOffset);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat),
-                          (GLvoid *) (4 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, kStride,
+                          (GLvoid *) kColorOffset);
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat),
-                          (GLvoid *) (8 * sizeof(GLfloat)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, kStride,
+                          (GLvoid *) kTexCoordOffset);
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
@@ -362,9 +364,10 @@ void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
     const auto *image = mBufferQueue.presentImage();
     if (image) {
         std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
-        ASurfaceTransaction_setBufferWithReleaseFn(transaction, mSurfaceControl.get(), image->buffer,
-                                                  image->fence ? image->fence->getFd().release()
-                                                               : -1,
+        ASurfaceTransaction_setBufferWithReleaseFn(transaction, mSurfaceControl.get(),
+                                                   image->buffer,
+                                                   image->fence ? image->fence->getFd().release()
+                                                                : -1,
                                                    weakSelf, ChildSurface::bufferReleasedCallback);
     }
     if (mChangedFlags[VISIBILITY_CHANGED]) {

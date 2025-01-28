@@ -9,7 +9,8 @@
 
 class ScopedFd {
 public:
-    explicit ScopedFd(int fd = -1) : mFd(fd) {}
+    explicit ScopedFd(int fd) : mFd(fd) {}
+    ScopedFd() : ScopedFd(-1) {}
 
     ~ScopedFd() {
         reset();
@@ -57,7 +58,7 @@ public:
     }
 
 private:
-    int mFd = -1;
+    int mFd;
 };
 
 #endif //HELLOSURFACECONTROL_SCOPEDFD_H
