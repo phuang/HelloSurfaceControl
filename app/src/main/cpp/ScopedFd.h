@@ -9,14 +9,16 @@
 
 class ScopedFd {
 public:
-    ScopedFd() = default;
-    explicit ScopedFd(int fd) : mFd(fd) {}
+    explicit ScopedFd(int fd = -1) : mFd(fd) {}
+
     ~ScopedFd() {
         reset();
     }
 
-    ScopedFd(ScopedFd&& other) noexcept {
-        mFd = other.mFd;
+    ScopedFd(const ScopedFd&) = delete;
+    ScopedFd& operator=(const ScopedFd&) = delete;
+
+    ScopedFd(ScopedFd&& other) noexcept : ScopedFd(other.mFd) {
         other.mFd = -1;
     }
 
@@ -30,7 +32,7 @@ public:
         return *this;
     }
 
-    bool isValid() const { return mFd != -1; }
+    bool isValid() const { return mFd >= 0; }
 
     void reset(int fd) {
         if (fd < 0) {
