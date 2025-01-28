@@ -124,6 +124,7 @@ private:
     GLuint mRbo = 0;
 
     enum : int {
+        VISIBILITY_CHANGED,
         CROP_CHANGED,
         POSITION_CHANGED,
         TRANSFORM_CHANGED,
@@ -136,6 +137,7 @@ private:
 
     std::bitset<MAX_CHANGED_FLAGS> mChangedFlags;
 
+    bool mVisible = true;
     ARect mCrop = {};
     float mXScale = 1.0f;
     float mYScale = 1.0f;

@@ -16,7 +16,7 @@
 
 #define LOG_TAG "SurfaceControlApp"
 
-static void *LibAndroid = nullptr;
+static void *gLibAndroid = nullptr;
 using PFN_OnBufferRelease = void (*)(void *_Null_unspecified context,
                                      int release_fence_fd);
 using PFN_ASurfaceTransaction_setBufferWithRelease = void (*)(
@@ -25,17 +25,17 @@ using PFN_ASurfaceTransaction_setBufferWithRelease = void (*)(
         AHardwareBuffer *_Nonnull buffer,
         int acquire_fence_fd, void *_Null_unspecified context,
         PFN_OnBufferRelease _Nonnull func);
-static PFN_ASurfaceTransaction_setBufferWithRelease pASurfaceTransaction_setBufferWithRelease = nullptr;
+static PFN_ASurfaceTransaction_setBufferWithRelease ASurfaceTransaction_setBufferWithReleaseFn = nullptr;
 
-static std::chrono::system_clock::time_point kStartTime = std::chrono::system_clock::now();
+static const std::chrono::system_clock::time_point kStartTime = std::chrono::system_clock::now();
 
 ChildSurface::ChildSurface(VkDevice device, VkQueue queue) :
         mDevice(device), mQueue(queue), mBufferQueue(device) {
-    if (!LibAndroid) {
-        LibAndroid = dlopen("libandroid.so", RTLD_NOW);
-        pASurfaceTransaction_setBufferWithRelease = reinterpret_cast<PFN_ASurfaceTransaction_setBufferWithRelease>(dlsym(
-                LibAndroid, "ASurfaceTransaction_setBufferWithRelease"));
-        if (!pASurfaceTransaction_setBufferWithRelease) {
+    if (!gLibAndroid) {
+        gLibAndroid = dlopen("libandroid.so", RTLD_NOW);
+        ASurfaceTransaction_setBufferWithReleaseFn = reinterpret_cast<PFN_ASurfaceTransaction_setBufferWithRelease>(dlsym(
+                gLibAndroid, "ASurfaceTransaction_setBufferWithRelease"));
+        if (!ASurfaceTransaction_setBufferWithReleaseFn) {
             LOGE("Failed to find ASurfaceTransaction_setBufferWithRelease which is available in Android SDK API level 36+");
         }
     }
@@ -45,6 +45,7 @@ ChildSurface::~ChildSurface() {
     mSurfaceControl = nullptr;
     // release gl objects
     glDeleteProgram(mProgram);
+    glDeleteBuffers(1, &mVbo);
     glDeleteBuffers(1, &mVbo);
     glDeleteVertexArrays(1, &mVao);
     glDeleteFramebuffers(1, &mFbo);
@@ -361,10 +362,16 @@ void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
     const auto *image = mBufferQueue.presentImage();
     if (image) {
         std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
-        pASurfaceTransaction_setBufferWithRelease(transaction, mSurfaceControl.get(), image->buffer,
+        ASurfaceTransaction_setBufferWithReleaseFn(transaction, mSurfaceControl.get(), image->buffer,
                                                   image->fence ? image->fence->getFd().release()
                                                                : -1,
-                                                  weakSelf, ChildSurface::bufferReleasedCallback);
+                                                   weakSelf, ChildSurface::bufferReleasedCallback);
+    }
+    if (mChangedFlags[VISIBILITY_CHANGED]) {
+        ASurfaceTransaction_setVisibility(transaction, mSurfaceControl.get(),
+                                          mVisible
+                                          ? ASurfaceTransactionVisibility::ASURFACE_TRANSACTION_VISIBILITY_SHOW
+                                          : ASurfaceTransactionVisibility::ASURFACE_TRANSACTION_VISIBILITY_HIDE);
     }
     if (mChangedFlags[CROP_CHANGED]) {
         ASurfaceTransaction_setCrop(transaction, mSurfaceControl.get(), mCrop);
@@ -387,9 +394,10 @@ void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
                                      mColor[3], ADataSpace::ADATASPACE_UNKNOWN);
     }
     if (mChangedFlags[TRANSPARENT_CHANGED]) {
-        ASurfaceTransaction_setBufferTransparency(transaction, mSurfaceControl.get(), mTransparent
-                                                                                      ? ASURFACE_TRANSACTION_TRANSPARENCY_TRANSPARENT
-                                                                                      : ASURFACE_TRANSACTION_TRANSPARENCY_OPAQUE);
+        ASurfaceTransaction_setBufferTransparency(transaction, mSurfaceControl.get(),
+                                                  mTransparent
+                                                  ? ASURFACE_TRANSACTION_TRANSPARENCY_TRANSPARENT
+                                                  : ASURFACE_TRANSACTION_TRANSPARENCY_OPAQUE);
     }
 
     mChangedFlags.reset();
