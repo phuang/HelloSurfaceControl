@@ -16,6 +16,9 @@
 
 #define LOG_TAG "SurfaceControlApp"
 
+constexpr GLenum kTextureTarget = GL_TEXTURE_2D;
+//constexpr GLenum kTextureTarget = GL_TEXTURE_EXTERNAL_OES;
+
 static void *gLibAndroid = nullptr;
 using PFN_OnBufferRelease = void (*)(void *_Null_unspecified context,
                                      int release_fence_fd);
@@ -85,10 +88,8 @@ void ChildSurface::draw() {
     drawGL();
 }
 
-
 // Shader sources (simple shaders to draw a triangle)
-const char *vertexShaderSource =
-        R"(#version 300 es
+const char *vertexShaderSource = R"(#version 300 es
     in vec3 aPosition;
     in vec4 aColor;
     out vec4 vColor;
@@ -102,8 +103,7 @@ const char *vertexShaderSource =
     }
 )";
 
-const char *fragmentShaderSource =
-        R"(#version 300 es
+const char *fragmentShaderSource = R"(#version 300 es
     precision mediump float;
     in vec4 vColor;
     in vec2 vTexCoord;
@@ -159,7 +159,7 @@ void ChildSurface::setupBuffers() {
             1, -1, 1, 1, 0, 1, 1, 0, 1,
             -1, -1, 1, 0, 0, 1, 1, 1, 1,
             -1, -1, -1, 0, 0, 0, 1, 1, 0,
-            1, -1, -1,  1, 0, 0, 1, 0, 0,
+            1, -1, -1, 1, 0, 0, 1, 0, 0,
 
             1, 1, 1, 1, 1, 1, 1, 0, 1,
             1, -1, 1, 1, 0, 1, 1, 1, 1,
@@ -188,23 +188,23 @@ void ChildSurface::setupBuffers() {
     };
 
     GLuint cubeIndices[] = {
-            0,1,2,
-            3,0,2,
+            0, 1, 2,
+            3, 0, 2,
 
-            4,5,6,
-            7,4,6,
+            4, 5, 6,
+            7, 4, 6,
 
-            8,9,10,
-            11,8,10,
+            8, 9, 10,
+            11, 8, 10,
 
-            12,13,14,
-            15,12,14,
+            12, 13, 14,
+            15, 12, 14,
 
-            16,17,18,
-            18,19,16,
+            16, 17, 18,
+            18, 19, 16,
 
-            20,21,22,
-            23,20,22,
+            20, 21, 22,
+            23, 20, 22,
     };
     // clang-format on
 
@@ -241,6 +241,7 @@ void ChildSurface::setupBuffers() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEbo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices), cubeIndices, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void ChildSurface::setupFramebuffer() {
@@ -268,8 +269,8 @@ void ChildSurface::setupFramebuffer() {
 int bindEGLImageAsTexture(EGLImage eglImage) {
     GLuint textureId;
     glGenTextures(1, &textureId);
-    glBindTexture(GL_TEXTURE_EXTERNAL_OES, textureId);
-    glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, eglImage);
+    glBindTexture(kTextureTarget, textureId);
+    glEGLImageTargetTexture2DOES(kTextureTarget, eglImage);
     return textureId;
 }
 
@@ -288,7 +289,8 @@ void ChildSurface::drawGL() {
 
     // Bind the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, mFbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, kTextureTarget, texture,
+                           0);
 
     // Bind the renderbuffer
     glBindRenderbuffer(GL_RENDERBUFFER, mRbo);
@@ -366,14 +368,16 @@ void ChildSurface::bufferReleased(int fenceFd) {
 }
 
 void ChildSurface::applyChanges(ASurfaceTransaction *transaction) {
-    const auto *image = mBufferQueue.presentImage();
-    if (image) {
-        std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(shared_from_this());
+    if (const auto *image = mBufferQueue.presentImage()) {
+        std::weak_ptr<ChildSurface> *weakSelf = new std::weak_ptr<ChildSurface>(
+                shared_from_this());
         ASurfaceTransaction_setBufferWithReleaseFn(transaction, mSurfaceControl.get(),
                                                    image->buffer,
-                                                   image->fence ? image->fence->getFd().release()
-                                                                : -1,
-                                                   weakSelf, ChildSurface::bufferReleasedCallback);
+                                                   image->fence
+                                                   ? image->fence->getFd().release()
+                                                   : -1,
+                                                   weakSelf,
+                                                   ChildSurface::bufferReleasedCallback);
     }
     if (mChangedFlags[VISIBILITY_CHANGED]) {
         ASurfaceTransaction_setVisibility(transaction, mSurfaceControl.get(),

@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace = "com.example.hellosurfacecontrol"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.hellosurfacecontrol"
-        minSdk = 35
-        targetSdk = 35
+        minSdk = 36
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -38,8 +38,8 @@ android {
     buildFeatures {
         viewBinding = true
     }
-    buildToolsVersion = "35.0.1"
-    ndkVersion = "27.0.12077973"
+    buildToolsVersion = "36.0.0 rc5"
+    ndkVersion = "29.0.13113456 rc1"
 }
 
 dependencies {

@@ -14,7 +14,7 @@
 #include "BufferQueue.h"
 
 struct ASurfaceControlDeleter {
-    void operator()(ASurfaceControl* surfaceControl) const {
+    void operator()(ASurfaceControl *surfaceControl) const {
         ASurfaceControl_release(surfaceControl);
     }
 };
@@ -24,13 +24,16 @@ using UniqueASurfaceControl = std::unique_ptr<ASurfaceControl, ASurfaceControlDe
 class ChildSurface : public std::enable_shared_from_this<ChildSurface> {
 public:
     ChildSurface(VkDevice device, VkQueue queue);
+
     ~ChildSurface();
 
-    bool init(ASurfaceControl* parent, const char* debugName);
+    bool init(ASurfaceControl *parent, const char *debugName);
+
     void resize(int width, int height);
+
     void draw();
 
-    void setCrop(const ARect& crop) {
+    void setCrop(const ARect &crop) {
         if (std::memcmp(&crop, &mCrop, sizeof(crop)) == 0) {
             return;
         }
@@ -95,15 +98,19 @@ public:
         mDelta = delta;
     }
 
-    void applyChanges(ASurfaceTransaction* transaction);
+    void applyChanges(ASurfaceTransaction *transaction);
 
 private:
     void drawGL();
+
     void createProgram();
+
     void setupBuffers();
+
     void setupFramebuffer();
 
-    static void bufferReleasedCallback(void* context, int fenceFd);
+    static void bufferReleasedCallback(void *context, int fenceFd);
+
     void bufferReleased(int fenceFd);
 
     VkDevice mDevice = VK_NULL_HANDLE;

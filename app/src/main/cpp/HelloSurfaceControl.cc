@@ -64,7 +64,7 @@ bool HelloSurfaceControl::initEGLOnRT() {
         return false;
     }
 
-    if (!eglMakeCurrent(mEGLDisplay, EGL_NO_CONTEXT, EGL_NO_CONTEXT, mEGLContext)) {
+    if (!eglMakeCurrent(mEGLDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, mEGLContext)) {
         LOGE("Failed to make EGL context current");
         return false;
     }
@@ -225,6 +225,8 @@ void HelloSurfaceControl::drawOnRT() {
     }
 
     for (auto &childSurface: mChildSurfaces) {
+//        childSurface->setColor(1.0f, 0.0f, 0.0f, 0.0f);
+//        childSurface->setTransparent(true);
         childSurface->draw();
         childSurface->applyChanges(transaction);
     }
