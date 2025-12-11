@@ -16,8 +16,9 @@
 
 #define LOG_TAG "SurfaceControlApp"
 
-constexpr GLenum kTextureTarget = GL_TEXTURE_2D;
-//constexpr GLenum kTextureTarget = GL_TEXTURE_EXTERNAL_OES;
+constexpr GLenum kTextureTarget = GL_TEXTURE_EXTERNAL_OES;
+// Using GL_TEXTURE_EXTERNAL_OES causes problem on Android Emulator.
+//constexpr GLenum kTextureTarget = GL_TEXTURE_2D;
 
 static void *gLibAndroid = nullptr;
 using PFN_OnBufferRelease = void (*)(void *_Null_unspecified context,
