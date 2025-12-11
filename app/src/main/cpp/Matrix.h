@@ -84,7 +84,7 @@ struct Matrix4x4 {
         return matrix;
     }
 
-    Matrix4x4 operator*(const Matrix4x4& other) const {
+    Matrix4x4 operator*(const Matrix4x4 &other) const {
         Matrix4x4 result = {};
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
@@ -97,11 +97,10 @@ struct Matrix4x4 {
         return result;
     }
 
-    Matrix4x4& operator*=(const Matrix4x4& other) {
+    Matrix4x4 &operator*=(const Matrix4x4 &other) {
         *this = *this * other;
         return *this;
     }
 };
-
 
 #endif //HELLOSURFACECONTROL_MATRIX_H
